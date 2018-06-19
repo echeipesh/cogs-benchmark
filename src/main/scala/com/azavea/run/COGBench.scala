@@ -47,7 +47,7 @@ object COGBench extends Bench {
       layersData
         .map { case (layerId, KeyBounds(SpatialKey(minCol, minRow), SpatialKey(maxCol, maxRow))) =>
           IO.shift(ec) *> IO {
-            val reader = valueReader.reader[SpatialKey, Tile](layerId)
+            val reader = valueReader.reader[SpatialKey, MultibandTile](layerId)
 
             timedCreateLong("layerId") {
               cfor(minCol)(_ < maxCol, _ + 1) { col =>
@@ -82,7 +82,7 @@ object COGBench extends Bench {
         .map { layerId =>
           IO {
             timedCreateLong(layerId.toString) {
-              layerReader.read[SpatialKey, Tile](layerId).count(): Unit
+              layerReader.read[SpatialKey, MultibandTile](layerId).count(): Unit
             }
           }
         }

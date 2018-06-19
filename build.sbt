@@ -58,3 +58,5 @@ assemblyMergeStrategy in assembly := {
   case "META-INF/ECLIPSEF.RSA" | "META-INF/ECLIPSEF.SF" => MergeStrategy.discard
   case _ => MergeStrategy.first
 }
+
+test in assembly := { }
