@@ -18,34 +18,39 @@ import org.apache.spark.rdd._
 
 
 object IngestAvro extends Bench {
-  def ingest(inputPath: String, outputPath: String)(name: String)(implicit sc: SparkContext): Unit = {
-    val s3InputPath = new AmazonS3URI(inputPath)
-    val s3OutputPath = new AmazonS3URI(outputPath)
+  def ingest(inputPath: String, outputPath: String)(name: String): String = {
+    val (time, _) = timedCreateLong(name) {
+      val s3InputPath = new AmazonS3URI(inputPath)
+      val s3OutputPath = new AmazonS3URI(outputPath)
 
-    val inputRdd: RDD[(ProjectedExtent, MultibandTile)] =
-      S3GeoTiffRDD.spatialMultiband(s3InputPath.getBucket, s3InputPath.getKey)
+      val inputRdd: RDD[(ProjectedExtent, MultibandTile)] =
+        S3GeoTiffRDD.spatialMultiband(s3InputPath.getBucket, s3InputPath.getKey)
 
-    val (_, rasterMetaData) = TileLayerMetadata.fromRdd(inputRdd, FloatingLayoutScheme(512))
+      val (_, rasterMetaData) = TileLayerMetadata.fromRdd(inputRdd, FloatingLayoutScheme(512))
 
-    val tiled: RDD[(SpatialKey, MultibandTile)] =
-      inputRdd
-        .tileToLayout(rasterMetaData.cellType, rasterMetaData.layout, Bilinear)
-        // .repartition(100)
+      val tiled: RDD[(SpatialKey, MultibandTile)] =
+        inputRdd
+          .tileToLayout(rasterMetaData.cellType, rasterMetaData.layout, Bilinear)
+      // .repartition(100)
 
-    val layoutScheme = ZoomedLayoutScheme(WebMercator, tileSize = 256)
+      val layoutScheme = ZoomedLayoutScheme(WebMercator, tileSize = 256)
 
-    val (zoom, reprojected): (Int, RDD[(SpatialKey, MultibandTile)] with Metadata[TileLayerMetadata[SpatialKey]]) =
-      MultibandTileLayerRDD(tiled, rasterMetaData).reproject(WebMercator, layoutScheme, Bilinear)
+      val (zoom, reprojected): (Int, RDD[(SpatialKey, MultibandTile)] with Metadata[TileLayerMetadata[SpatialKey]]) =
+        MultibandTileLayerRDD(tiled, rasterMetaData).reproject(WebMercator, layoutScheme, Bilinear)
 
-    val attributeStore = S3AttributeStore(s3OutputPath.getBucket, s3OutputPath.getKey)
-    val writer = S3LayerWriter(attributeStore)
+      val attributeStore = S3AttributeStore(s3OutputPath.getBucket, s3OutputPath.getKey)
+      val writer = S3LayerWriter(attributeStore)
 
-    Pyramid.upLevels(reprojected, layoutScheme, zoom, Bilinear) { (rdd, z) =>
-      val layerId = LayerId(name, z)
-      // If the layer exists already, delete it out before writing
-      if(attributeStore.layerExists(layerId)) S3LayerDeleter(attributeStore).delete(layerId)
-      writer.write(layerId, rdd, ZCurveKeyIndexMethod)
+      Pyramid.upLevels(reprojected, layoutScheme, zoom, Bilinear) { (rdd, z) =>
+        val layerId = LayerId(name, z)
+        // If the layer exists already, delete it out before writing
+        if (attributeStore.layerExists(layerId)) S3LayerDeleter(attributeStore).delete(layerId)
+        writer.write(layerId, rdd, ZCurveKeyIndexMethod)
+      }
     }
-  }
 
+    val result = s"IngestAvro.ingest:: ${"%,d".format(time)}"
+    logger.info(result)
+    result
+  }
 }

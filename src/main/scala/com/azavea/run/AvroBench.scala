@@ -17,7 +17,7 @@ import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 
 object AvroBench extends Bench {
-  def runValueReader(path: String)(name: String, threads: Int = 1, zoom: Option[Int] = None)(implicit sc: SparkContext): Unit = {
+  def runValueReader(path: String)(name: String, threads: Int = 1, zoom: Option[Int] = None): String = {
     val pool = Executors.newFixedThreadPool(threads)
     implicit val ec = ExecutionContext.fromExecutor(pool)
 
@@ -60,15 +60,13 @@ object AvroBench extends Bench {
     pool.shutdown()
 
     val averageTime = calculated.map(_._1).sum / calculated.length
-    val t = "%,d".format(averageTime)
-    logger.info(s"runValueReader:: $t")
+    val result = s"AvroBench.runValueReader:: ${"%,d".format(averageTime)}"
+    logger.info(result)
+    result
   }
 
 
-  def runLayerReader(path: String)(name: String, threads: Int = 1, zoom: Option[Int] = None, iterations: Option[Int] = None)(implicit sc: SparkContext): Unit = {
-    val pool = Executors.newFixedThreadPool(threads)
-    implicit val ec = ExecutionContext.fromExecutor(pool)
-
+  def runLayerReader(path: String)(name: String, zoom: Option[Int] = None, iterations: Option[Int] = None): String = {
     val s3Path = new AmazonS3URI(path)
     val attributeStore = S3AttributeStore(s3Path.getBucket, s3Path.getKey)
 
@@ -85,19 +83,19 @@ object AvroBench extends Bench {
     val res: IO[List[(Long, Unit)]] =
       layersData
         .map { layerId =>
-          IO.shift(ec) *> IO {
-            timedCreateLong("layerId") {
+          IO {
+            timedCreateLong(layerId.toString) {
               layerReader.read[SpatialKey, Tile, TileLayerMetadata[SpatialKey]](layerId).count(): Unit
             }
           }
         }
-        .parSequence
+        .sequence
 
     val calculated = res.unsafeRunSync()
-    pool.shutdown()
 
     val averageTime = calculated.map(_._1).sum / calculated.length
-    val t = "%,d".format(averageTime)
-    logger.info(s"runValueReader:: $t")
+    val result = s"AvroBench.runLayerReader:: ${"%,d".format(averageTime)}"
+    logger.info(result)
+    result
   }
 }

@@ -24,7 +24,7 @@ object COGBench extends Bench {
     attributeStore.availableZoomLevels(name).toList
   }
 
-  def runValueReader(path: String)(name: String, zoomLevels: List[Int], threads: Int = 1)(implicit sc: SparkContext): Unit = {
+  def runValueReader(path: String)(name: String, zoomLevels: List[Int], threads: Int = 1): String = {
     val pool = Executors.newFixedThreadPool(threads)
     implicit val ec = ExecutionContext.fromExecutor(pool)
 
@@ -64,15 +64,13 @@ object COGBench extends Bench {
     pool.shutdown()
 
     val averageTime = calculated.map(_._1).sum / calculated.length
-    val t = "%,d".format(averageTime)
-    logger.info(s"runValueReader:: $t")
+    val result = s"COGBench.runValueReader:: ${"%,d".format(averageTime)}"
+    logger.info(result)
+    result
   }
 
 
-  def runLayerReader(path: String)(name: String, threads: Int = 1, zoomLevels: List[Int])(implicit sc: SparkContext): Unit = {
-    val pool = Executors.newFixedThreadPool(threads)
-    implicit val ec = ExecutionContext.fromExecutor(pool)
-
+  def runLayerReader(path: String)(name: String, zoomLevels: List[Int]): String = {
     val s3Path = new AmazonS3URI(path)
     val attributeStore = S3AttributeStore(s3Path.getBucket, s3Path.getKey)
 
@@ -82,19 +80,19 @@ object COGBench extends Bench {
     val res: IO[List[(Long, Unit)]] =
       layersData
         .map { layerId =>
-          IO.shift(ec) *> IO {
-            timedCreateLong("layerId") {
+          IO {
+            timedCreateLong(layerId.toString) {
               layerReader.read[SpatialKey, Tile](layerId).count(): Unit
             }
           }
         }
-        .parSequence
+        .sequence
 
     val calculated = res.unsafeRunSync()
-    pool.shutdown()
 
     val averageTime = calculated.map(_._1).sum / calculated.length
-    val t = "%,d".format(averageTime)
-    logger.info(s"runValueReader:: $t")
+    val result = s"COGBench.runLayerReader:: ${"%,d".format(averageTime)}"
+    logger.info(result)
+    result
   }
 }
