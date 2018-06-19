@@ -1,5 +1,7 @@
 package com.azavea.ingest
 
+import com.azavea._
+
 import geotrellis.raster._
 import geotrellis.raster.resample._
 import geotrellis.proj4._
@@ -11,15 +13,16 @@ import geotrellis.spark.pyramid._
 import geotrellis.spark.tiling._
 import geotrellis.vector._
 
+import cats.Id
+import cats.data.WriterT
+import cats.implicits._
 import com.amazonaws.services.s3.AmazonS3URI
-import com.azavea.Bench
-import org.apache.spark._
 import org.apache.spark.rdd._
 
 
 object IngestAvro extends Bench {
-  def ingest(inputPath: String, outputPath: String)(name: String): String = {
-    val (time, _) = timedCreateLong(name) {
+  def ingest(inputPath: String, outputPath: String)(name: String): Logged = {
+    val res = timedCreateWriter(name) {
       val s3InputPath = new AmazonS3URI(inputPath)
       val s3OutputPath = new AmazonS3URI(outputPath)
 
@@ -44,13 +47,13 @@ object IngestAvro extends Bench {
       Pyramid.upLevels(reprojected, layoutScheme, zoom, Bilinear) { (rdd, z) =>
         val layerId = LayerId(name, z)
         // If the layer exists already, delete it out before writing
-        if (attributeStore.layerExists(layerId)) S3LayerDeleter(attributeStore).delete(layerId)
+        // if (attributeStore.layerExists(layerId)) S3LayerDeleter(attributeStore).delete(layerId)
         writer.write(layerId, rdd, ZCurveKeyIndexMethod)
       }
+
+      ()
     }
 
-    val result = s"IngestAvro.ingest:: ${"%,d".format(time)}"
-    logger.info(result)
-    result
+    res.mapWritten(time => Vector(s"IngestAvro.ingest:: ${"%,d".format(time)}"))
   }
 }

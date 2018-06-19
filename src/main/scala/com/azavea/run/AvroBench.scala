@@ -1,7 +1,6 @@
 package com.azavea.run
 
-import com.azavea.Bench
-
+import com.azavea._
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
@@ -10,14 +9,16 @@ import geotrellis.spark.io.s3._
 import cats.effect.IO
 import cats.implicits._
 import com.amazonaws.services.s3.AmazonS3URI
-import org.apache.spark._
+
 import spire.syntax.cfor._
 
 import java.util.concurrent.Executors
+
 import scala.concurrent.ExecutionContext
+import scala.util.Try
 
 object AvroBench extends Bench {
-  def runValueReader(path: String)(name: String, threads: Int = 1, zoom: Option[Int] = None): String = {
+  def runValueReader(path: String)(name: String, threads: Int = 1, zoom: Option[Int] = None): Logged = {
     val pool = Executors.newFixedThreadPool(threads)
     implicit val ec = ExecutionContext.fromExecutor(pool)
 
@@ -48,7 +49,7 @@ object AvroBench extends Bench {
             timedCreateLong("layerId") {
               cfor(minCol)(_ < maxCol, _ + 1) { col =>
                 cfor(minRow)(_ < maxRow, _ + 1) { row =>
-                  reader.read(SpatialKey(col, row))
+                  Try(reader.read(SpatialKey(col, row))) // skip all errors
                 }
               }
             }
@@ -56,17 +57,18 @@ object AvroBench extends Bench {
         }
         .parSequence
 
-    val calculated = res.unsafeRunSync()
-    pool.shutdown()
-
-    val averageTime = calculated.map(_._1).sum / calculated.length
-    val result = s"AvroBench.runValueReader:: ${"%,d".format(averageTime)}"
-    logger.info(result)
-    result
+    for {
+      _ <- {
+        val calculated = res.unsafeRunSync()
+        pool.shutdown()
+        val averageTime = calculated.map(_._1).sum / calculated.length
+        Vector(s"AvroBench.runValueReader:: ${"%,d".format(averageTime)}").tell
+      }
+    } yield ()
   }
 
 
-  def runLayerReader(path: String)(name: String, zoom: Option[Int] = None, iterations: Option[Int] = None): String = {
+  def runLayerReader(path: String)(name: String, zoom: Option[Int] = None, iterations: Option[Int] = None): Logged = {
     val s3Path = new AmazonS3URI(path)
     val attributeStore = S3AttributeStore(s3Path.getBucket, s3Path.getKey)
 
@@ -91,11 +93,12 @@ object AvroBench extends Bench {
         }
         .sequence
 
-    val calculated = res.unsafeRunSync()
-
-    val averageTime = calculated.map(_._1).sum / calculated.length
-    val result = s"AvroBench.runLayerReader:: ${"%,d".format(averageTime)}"
-    logger.info(result)
-    result
+    for {
+      _ <- {
+        val calculated = res.unsafeRunSync()
+        val averageTime = calculated.map(_._1).sum / calculated.length
+        Vector(s"AvroBench.runLayerReader:: ${"%,d".format(averageTime)}").tell
+      }
+    } yield ()
   }
 }
