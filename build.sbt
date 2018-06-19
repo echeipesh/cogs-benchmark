@@ -1,4 +1,3 @@
-// Rename this as you see fit
 name := "cogs-benchmark"
 
 version := "0.1.0-SNAPSHOT"
