@@ -1,6 +1,7 @@
 package com.azavea.ingest
 
 import com.azavea._
+
 import geotrellis.raster._
 import geotrellis.raster.resample._
 import geotrellis.proj4._
@@ -10,13 +11,14 @@ import geotrellis.spark.io.s3._
 import geotrellis.spark.io.s3.cog._
 import geotrellis.spark.io.index._
 import geotrellis.spark.tiling._
+import geotrellis.raster.io.geotiff.compression.{Compression, NoCompression}
 import geotrellis.vector._
 import com.amazonaws.services.s3.AmazonS3URI
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd._
 
 object IngestCOG extends Bench {
-  def ingest(inputPath: String, outputPath: String)(name: String)(implicit sc: SparkContext): Logged = {
+  def ingest(inputPath: String, outputPath: String)(name: String, compression: Compression = NoCompression)(implicit sc: SparkContext): Logged = {
     val res = timedCreateWriter {
       val s3InputPath = new AmazonS3URI(inputPath)
       val s3OutputPath = new AmazonS3URI(outputPath)
@@ -39,7 +41,7 @@ object IngestCOG extends Bench {
       val attributeStore = S3AttributeStore(s3OutputPath.getBucket, s3OutputPath.getKey)
       val writer = S3COGLayerWriter(attributeStore)
 
-      writer.write(name, reprojected, zoom, ZCurveKeyIndexMethod)
+      writer.write(name, reprojected, zoom, ZCurveKeyIndexMethod, compression)
     }
 
     res.mapWritten(time => Vector(s"IngestCOG.ingest:: ${"%,d".format(time)} ms"))

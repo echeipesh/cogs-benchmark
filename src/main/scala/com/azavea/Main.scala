@@ -2,10 +2,10 @@ package com.azavea
 
 import com.azavea.ingest._
 import com.azavea.run._
-
 import geotrellis.vector._
 import geotrellis.util.LazyLogging
 import cats.implicits._
+import geotrellis.raster.io.geotiff.compression.DeflateCompression
 
 object Main extends Spark with LazyLogging {
   def main(args: Array[String]): Unit = {
@@ -22,10 +22,11 @@ object Main extends Spark with LazyLogging {
     val inputPath = "s3://gt-rasters/nlcd/2011/tiles"
     val avroPath  = "s3://geotrellis-test/daunnc/cog-benchmark/avro-3"
     val cogPath   = "s3://geotrellis-test/daunnc/cog-benchmark/cog-3"
+    val cogCPath  = "s3://geotrellis-test/daunnc/cog-benchmark/cogc-3"
     val avroLayer = "avroLayer"
     val cogLayer  = "cogLayer"
 
-    val layerExt = Extent(-1.4499798517584793E7, 4945781.478164045, -1.1975542095495135E7, 6961273.039987572).buffer(200000).some
+    val layerExt = Extent(-1.4499798517584793E7, 4945781.478164045, -1.1975542095495135E7, 6961273.039987572).buffer(1000000).some
     val valueExt = Extent(-1.4499798517584793E7, 6413372.421239428, -1.4421527000620775E7, 6961273.039987572).some
 
     val result = args.headOption match {
@@ -49,6 +50,10 @@ object Main extends Spark with LazyLogging {
       case Some("cog-ingest") =>
         for {
           _ <- IngestCOG.ingest(inputPath, cogPath)(cogLayer)
+        } yield ()
+      case Some("cog-ingest-compression") =>
+        for {
+          _ <- IngestCOG.ingest(inputPath, cogPath)(cogCLayer, DeflateCompression)
         } yield ()
       case Some("cog-value-read") =>
         for {
@@ -86,6 +91,14 @@ object Main extends Spark with LazyLogging {
         } yield ()
       case Some("reads") =>
         for {
+          _ <- Vector("==============================================").tell
+          _ <- Vector(s"InputPath: $inputPath").tell
+          _ <- Vector(s"AvroPath: $avroPath").tell
+          _ <- Vector(s"COGPath: $cogPath").tell
+          _ <- Vector(s"AvroLayer: $avroLayer").tell
+          _ <- Vector(s"COGLayer: $cogLayer").tell
+          _ <- Vector(s"ValueReadersExt: $valueExt").tell
+          _ <- Vector(s"LayerReadersExt: $layerExt").tell
           _ <- Vector("==========READS BENCHMARK, zoom lvl 13========").tell
           _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 13.some, extent = layerExt)
           _ <- COGBench.runLayerReader(cogPath)(cogLayer, List(13), extent = layerExt)
@@ -102,8 +115,42 @@ object Main extends Spark with LazyLogging {
           _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 5.some, extent = valueExt)
           _ <- COGBench.runValueReader(cogPath)(cogLayer, List(5), extent = valueExt)
         } yield ()
+      case Some("readsc") =>
+        for {
+          _ <- Vector("==============================================").tell
+          _ <- Vector(s"InputPath: $inputPath").tell
+          _ <- Vector(s"AvroPath: $avroPath").tell
+          _ <- Vector(s"COGCompressedPath: $cogCPath").tell
+          _ <- Vector(s"AvroLayer: $avroLayer").tell
+          _ <- Vector(s"COGLayer: $cogLayer").tell
+          _ <- Vector(s"ValueReadersExt: $valueExt").tell
+          _ <- Vector(s"LayerReadersExt: $layerExt").tell
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 13========").tell
+          _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 13.some, extent = layerExt)
+          _ <- COGBench.runLayerReader(cogCPath)(cogLayer, List(13), extent = layerExt)
+          _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 13.some, extent = valueExt)
+          _ <- COGBench.runValueReader(cogCPath)(cogLayer, List(13), extent = valueExt)
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 9========").tell
+          _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 9.some, extent = layerExt)
+          _ <- COGBench.runLayerReader(cogCPath)(cogLayer, List(9), extent = layerExt)
+          _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 9.some, extent = valueExt)
+          _ <- COGBench.runValueReader(cogCPath)(cogLayer, List(9), extent = valueExt)
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 5========").tell
+          _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 5.some, extent = layerExt)
+          _ <- COGBench.runLayerReader(cogCPath)(cogLayer, List(5), extent = layerExt)
+          _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 5.some, extent = valueExt)
+          _ <- COGBench.runValueReader(cogCPath)(cogLayer, List(5), extent = valueExt)
+        } yield ()
       case _ =>
         for {
+          _ <- Vector("==============================================").tell
+          _ <- Vector(s"InputPath: $inputPath").tell
+          _ <- Vector(s"AvroPath: $avroPath").tell
+          _ <- Vector(s"COGPath: $cogPath").tell
+          _ <- Vector(s"AvroLayer: $avroLayer").tell
+          _ <- Vector(s"COGLayer: $cogLayer").tell
+          _ <- Vector(s"ValueReadersExt: $valueExt").tell
+          _ <- Vector(s"LayerReadersExt: $layerExt").tell
           _ <- Vector("==========READS BENCHMARK, ingest========").tell
           _ <- IngestAvro.ingest(inputPath, avroPath)(avroLayer)
           _ <- IngestCOG.ingest(inputPath, cogPath)(cogLayer)
