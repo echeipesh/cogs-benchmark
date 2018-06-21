@@ -72,11 +72,29 @@ spark-submit,--master,yarn-cluster,\
 --driver-cores,2,\
 --executor-memory,4200M,\
 --executor-cores,2,\
---conf,spark.dynamicAllocation.enabled=true,\
+--conf,spark.dynamicAllocation.enabled=false,\
+--conf,spark.executor.instances=20,\
 --conf,spark.yarn.executor.memoryOverhead=700,\
 --conf,spark.yarn.driver.memoryOverhead=700,\
 ${S3_ASSEMBLY}\
 ] | cut -f2 | tee last-step-id.txt
+
+benchmark-compression:
+	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \
+--steps Type=CUSTOM_JAR,Name="Benchmark all",Jar=command-runner.jar,Args=[\
+spark-submit,--master,yarn-cluster,\
+--class,com.azavea.Main,\
+--driver-memory,4200M,\
+--driver-cores,2,\
+--executor-memory,4200M,\
+--executor-cores,2,\
+--conf,spark.dynamicAllocation.enabled=false,\
+--conf,spark.executor.instances=20,\
+--conf,spark.yarn.executor.memoryOverhead=700,\
+--conf,spark.yarn.driver.memoryOverhead=700,\
+${S3_ASSEMBLY},compressed\
+] | cut -f2 | tee last-step-id.txt
+
 
 benchmark-avro-ingest:
 	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \

@@ -53,7 +53,7 @@ object Main extends Spark with LazyLogging {
         } yield ()
       case Some("cog-ingest-compression") =>
         for {
-          _ <- IngestCOG.ingest(inputPath, cogPath)(cogCLayer, DeflateCompression)
+          _ <- IngestCOG.ingest(inputPath, cogPath)(cogLayer, DeflateCompression)
         } yield ()
       case Some("cog-value-read") =>
         for {
@@ -99,21 +99,29 @@ object Main extends Spark with LazyLogging {
           _ <- Vector(s"COGLayer: $cogLayer").tell
           _ <- Vector(s"ValueReadersExt: $valueExt").tell
           _ <- Vector(s"LayerReadersExt: $layerExt").tell
-          _ <- Vector("==========READS BENCHMARK, zoom lvl 13========").tell
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 13 (bounded by extent)========").tell
           _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 13.some, extent = layerExt)
           _ <- COGBench.runLayerReader(cogPath)(cogLayer, List(13), extent = layerExt)
           _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 13.some, extent = valueExt)
           _ <- COGBench.runValueReader(cogPath)(cogLayer, List(13), extent = valueExt)
-          _ <- Vector("==========READS BENCHMARK, zoom lvl 9========").tell
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 9 (bounded by extent)========").tell
           _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 9.some, extent = layerExt)
           _ <- COGBench.runLayerReader(cogPath)(cogLayer, List(9), extent = layerExt)
           _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 9.some, extent = valueExt)
           _ <- COGBench.runValueReader(cogPath)(cogLayer, List(9), extent = valueExt)
-          _ <- Vector("==========READS BENCHMARK, zoom lvl 5========").tell
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 9========").tell
+          _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 9.some)
+          _ <- COGBench.runLayerReader(cogPath)(cogLayer, List(9), extent = layerExt)
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 5 (bounded by extent)========").tell
           _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 5.some, extent = layerExt)
           _ <- COGBench.runLayerReader(cogPath)(cogLayer, List(5), extent = layerExt)
           _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 5.some, extent = valueExt)
           _ <- COGBench.runValueReader(cogPath)(cogLayer, List(5), extent = valueExt)
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 5========").tell
+          _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 5.some)
+          _ <- COGBench.runLayerReader(cogPath)(cogLayer, List(5))
+          _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 5.some)
+          _ <- COGBench.runValueReader(cogPath)(cogLayer, List(5))
         } yield ()
       case Some("readsc") =>
         for {
@@ -125,21 +133,66 @@ object Main extends Spark with LazyLogging {
           _ <- Vector(s"COGLayer: $cogLayer").tell
           _ <- Vector(s"ValueReadersExt: $valueExt").tell
           _ <- Vector(s"LayerReadersExt: $layerExt").tell
-          _ <- Vector("==========READS BENCHMARK, zoom lvl 13========").tell
+          _ <- Vector("==========READSC BENCHMARK, zoom lvl 13 (bounded by extent)========").tell
           _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 13.some, extent = layerExt)
           _ <- COGBench.runLayerReader(cogCPath)(cogLayer, List(13), extent = layerExt)
           _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 13.some, extent = valueExt)
           _ <- COGBench.runValueReader(cogCPath)(cogLayer, List(13), extent = valueExt)
-          _ <- Vector("==========READS BENCHMARK, zoom lvl 9========").tell
+          _ <- Vector("==========READSC BENCHMARK, zoom lvl 9 (bounded by extent)========").tell
           _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 9.some, extent = layerExt)
           _ <- COGBench.runLayerReader(cogCPath)(cogLayer, List(9), extent = layerExt)
           _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 9.some, extent = valueExt)
           _ <- COGBench.runValueReader(cogCPath)(cogLayer, List(9), extent = valueExt)
-          _ <- Vector("==========READS BENCHMARK, zoom lvl 5========").tell
+          _ <- Vector("==========READSC BENCHMARK, zoom lvl 9========").tell
+          _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 9.some)
+          _ <- COGBench.runLayerReader(cogCPath)(cogLayer, List(9), extent = layerExt)
+          _ <- Vector("==========READSC BENCHMARK, zoom lvl 5 (bounded by extent)========").tell
           _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 5.some, extent = layerExt)
           _ <- COGBench.runLayerReader(cogCPath)(cogLayer, List(5), extent = layerExt)
           _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 5.some, extent = valueExt)
           _ <- COGBench.runValueReader(cogCPath)(cogLayer, List(5), extent = valueExt)
+          _ <- Vector("==========READSC BENCHMARK, zoom lvl 5========").tell
+          _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 5.some)
+          _ <- COGBench.runLayerReader(cogCPath)(cogLayer, List(5))
+          _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 5.some)
+          _ <- COGBench.runValueReader(cogCPath)(cogLayer, List(5))
+        } yield ()
+      case Some("compressed") =>
+        for {
+          _ <- Vector("==============================================").tell
+          _ <- Vector(s"InputPath: $inputPath").tell
+          _ <- Vector(s"AvroPath: $avroPath").tell
+          _ <- Vector(s"COGCompressedPath: $cogCPath").tell
+          _ <- Vector(s"AvroLayer: $avroLayer").tell
+          _ <- Vector(s"COGLayer: $cogLayer").tell
+          _ <- Vector(s"ValueReadersExt: $valueExt").tell
+          _ <- Vector(s"LayerReadersExt: $layerExt").tell
+          _ <- Vector("==========READS BENCHMARK, ingest========").tell
+          _ <- IngestAvro.ingest(inputPath, avroPath)(avroLayer)
+          _ <- IngestCOG.ingest(inputPath, cogCPath)(cogLayer)
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 13 (bounded by extent)========").tell
+          _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 13.some, extent = layerExt)
+          _ <- COGBench.runLayerReader(cogCPath)(cogLayer, List(13), extent = layerExt)
+          _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 13.some, extent = valueExt)
+          _ <- COGBench.runValueReader(cogCPath)(cogLayer, List(13), extent = valueExt)
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 9 (bounded by extent)========").tell
+          _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 9.some, extent = layerExt)
+          _ <- COGBench.runLayerReader(cogCPath)(cogLayer, List(9), extent = layerExt)
+          _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 9.some, extent = valueExt)
+          _ <- COGBench.runValueReader(cogCPath)(cogLayer, List(9), extent = valueExt)
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 9========").tell
+          _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 9.some)
+          _ <- COGBench.runLayerReader(cogCPath)(cogLayer, List(9))
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 5 (bounded by extent)========").tell
+          _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 5.some, extent = layerExt)
+          _ <- COGBench.runLayerReader(cogCPath)(cogLayer, List(5), extent = layerExt)
+          _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 5.some, extent = valueExt)
+          _ <- COGBench.runValueReader(cogCPath)(cogLayer, List(5), extent = valueExt)
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 5========").tell
+          _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 5.some)
+          _ <- COGBench.runLayerReader(cogCPath)(cogLayer, List(5))
+          _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 5.some)
+          _ <- COGBench.runValueReader(cogCPath)(cogLayer, List(5))
         } yield ()
       case _ =>
         for {
@@ -154,21 +207,29 @@ object Main extends Spark with LazyLogging {
           _ <- Vector("==========READS BENCHMARK, ingest========").tell
           _ <- IngestAvro.ingest(inputPath, avroPath)(avroLayer)
           _ <- IngestCOG.ingest(inputPath, cogPath)(cogLayer)
-          _ <- Vector("==========READS BENCHMARK, zoom lvl 13========").tell
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 13 (bounded by extent)========").tell
           _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 13.some, extent = layerExt)
           _ <- COGBench.runLayerReader(cogPath)(cogLayer, List(13), extent = layerExt)
           _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 13.some, extent = valueExt)
           _ <- COGBench.runValueReader(cogPath)(cogLayer, List(13), extent = valueExt)
-          _ <- Vector("==========READS BENCHMARK, zoom lvl 9========").tell
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 9 (bounded by extent)========").tell
           _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 9.some, extent = layerExt)
           _ <- COGBench.runLayerReader(cogPath)(cogLayer, List(9), extent = layerExt)
           _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 9.some, extent = valueExt)
           _ <- COGBench.runValueReader(cogPath)(cogLayer, List(9), extent = valueExt)
-          _ <- Vector("==========READS BENCHMARK, zoom lvl 5========").tell
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 9========").tell
+          _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 9.some)
+          _ <- COGBench.runLayerReader(cogPath)(cogLayer, List(9))
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 5 (bounded by extent)========").tell
           _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 5.some, extent = layerExt)
           _ <- COGBench.runLayerReader(cogPath)(cogLayer, List(5), extent = layerExt)
           _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 5.some, extent = valueExt)
           _ <- COGBench.runValueReader(cogPath)(cogLayer, List(5), extent = valueExt)
+          _ <- Vector("==========READS BENCHMARK, zoom lvl 5========").tell
+          _ <- AvroBench.runLayerReader(avroPath)(avroLayer, 5.some)
+          _ <- COGBench.runLayerReader(cogPath)(cogLayer, List(5))
+          _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 5.some)
+          _ <- COGBench.runValueReader(cogPath)(cogLayer, List(5))
         } yield ()
     }
 
