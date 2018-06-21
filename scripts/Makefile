@@ -58,7 +58,7 @@ start-zeppelin:
 
 upload-assembly: ${ASSEMBLY}
 	cd terraform; aws emr put --cluster-id ${CLUSTER_ID} --key-pair-file ${KEY_PAIR_FILE} \
-	--src ${ASSEMBLY} --dest /tmp/geotrellis-spark-etl-assembly-${GEOTRELLIS_VERSION}${GEOTRELLIS_VERSION_SUFFIX}.jar
+	--src ../${ASSEMBLY} --dest /tmp/cogs-benchmark-assembly-${VERSION}${VERSION_SUFFIX}.jar
 
 upload-assembly-s3: ${ASSEMBLY}
 	aws s3 cp ${ASSEMBLY} ${S3_ASSEMBLY}
@@ -78,7 +78,7 @@ spark-submit,--master,yarn-cluster,\
 ${S3_ASSEMBLY}\
 ] | cut -f2 | tee last-step-id.txt
 
-benchmark-avro:
+benchmark-avro-ingest:
 	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \
 --steps Type=CUSTOM_JAR,Name="Benchmark all",Jar=command-runner.jar,Args=[\
 spark-submit,--master,yarn-cluster,\
@@ -90,10 +90,58 @@ spark-submit,--master,yarn-cluster,\
 --conf,spark.dynamicAllocation.enabled=true,\
 --conf,spark.yarn.executor.memoryOverhead=700,\
 --conf,spark.yarn.driver.memoryOverhead=700,\
-${S3_ASSEMBLY},avro\
+${S3_ASSEMBLY},avro-ingest\
 ] | cut -f2 | tee last-step-id.txt
 
-benchmark-cog:
+benchmark-avro-reads:
+	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \
+--steps Type=CUSTOM_JAR,Name="Benchmark all",Jar=command-runner.jar,Args=[\
+spark-submit,--master,yarn-cluster,\
+--class,com.azavea.Main,\
+--driver-memory,4200M,\
+--driver-cores,2,\
+--executor-memory,4200M,\
+--executor-cores,2,\
+--conf,spark.dynamicAllocation.enabled=false,\
+--conf,spark.executor.instances=20,\
+--conf,spark.yarn.executor.memoryOverhead=700,\
+--conf,spark.yarn.driver.memoryOverhead=700,\
+${S3_ASSEMBLY},avro-reads\
+] | cut -f2 | tee last-step-id.txt
+
+benchmark-avro-value-read:
+	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \
+--steps Type=CUSTOM_JAR,Name="Benchmark all",Jar=command-runner.jar,Args=[\
+spark-submit,--master,yarn-cluster,\
+--class,com.azavea.Main,\
+--driver-memory,4200M,\
+--driver-cores,2,\
+--executor-memory,4200M,\
+--executor-cores,2,\
+--conf,spark.dynamicAllocation.enabled=false,\
+--conf,spark.executor.instances=20,\
+--conf,spark.yarn.executor.memoryOverhead=700,\
+--conf,spark.yarn.driver.memoryOverhead=700,\
+${S3_ASSEMBLY},avro-value-read\
+] | cut -f2 | tee last-step-id.txt
+
+benchmark-avro-layer-read:
+	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \
+--steps Type=CUSTOM_JAR,Name="Benchmark all",Jar=command-runner.jar,Args=[\
+spark-submit,--master,yarn-cluster,\
+--class,com.azavea.Main,\
+--driver-memory,4200M,\
+--driver-cores,2,\
+--executor-memory,4200M,\
+--executor-cores,2,\
+--conf,spark.dynamicAllocation.enabled=false,\
+--conf,spark.executor.instances=20,\
+--conf,spark.yarn.executor.memoryOverhead=700,\
+--conf,spark.yarn.driver.memoryOverhead=700,\
+${S3_ASSEMBLY},avro-layer-read\
+] | cut -f2 | tee last-step-id.txt
+
+benchmark-cog-ingest:
 	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \
 --steps Type=CUSTOM_JAR,Name="Benchmark all",Jar=command-runner.jar,Args=[\
 spark-submit,--master,yarn-cluster,\
@@ -105,5 +153,101 @@ spark-submit,--master,yarn-cluster,\
 --conf,spark.dynamicAllocation.enabled=true,\
 --conf,spark.yarn.executor.memoryOverhead=700,\
 --conf,spark.yarn.driver.memoryOverhead=700,\
-${S3_ASSEMBLY},cog\
+${S3_ASSEMBLY},cog-ingest\
+] | cut -f2 | tee last-step-id.txt
+
+benchmark-cog-reads:
+	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \
+--steps Type=CUSTOM_JAR,Name="Benchmark all",Jar=command-runner.jar,Args=[\
+spark-submit,--master,yarn-cluster,\
+--class,com.azavea.Main,\
+--driver-memory,4200M,\
+--driver-cores,2,\
+--executor-memory,4200M,\
+--executor-cores,2,\
+--conf,spark.dynamicAllocation.enabled=false,\
+--conf,spark.executor.instances=20,\
+--conf,spark.yarn.executor.memoryOverhead=700,\
+--conf,spark.yarn.driver.memoryOverhead=700,\
+${S3_ASSEMBLY},cog-reads\
+] | cut -f2 | tee last-step-id.txt
+
+benchmark-cog-value-read:
+	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \
+--steps Type=CUSTOM_JAR,Name="Benchmark all",Jar=command-runner.jar,Args=[\
+spark-submit,--master,yarn-cluster,\
+--class,com.azavea.Main,\
+--driver-memory,4200M,\
+--driver-cores,2,\
+--executor-memory,4200M,\
+--executor-cores,2,\
+--conf,spark.dynamicAllocation.enabled=false,\
+--conf,spark.executor.instances=20,\
+--conf,spark.yarn.executor.memoryOverhead=700,\
+--conf,spark.yarn.driver.memoryOverhead=700,\
+${S3_ASSEMBLY},cog-value-read\
+] | cut -f2 | tee last-step-id.txt
+
+benchmark-cog-layer-read:
+	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \
+--steps Type=CUSTOM_JAR,Name="Benchmark all",Jar=command-runner.jar,Args=[\
+spark-submit,--master,yarn-cluster,\
+--class,com.azavea.Main,\
+--driver-memory,4200M,\
+--driver-cores,2,\
+--executor-memory,4200M,\
+--executor-cores,2,\
+--conf,spark.dynamicAllocation.enabled=false,\
+--conf,spark.executor.instances=20,\
+--conf,spark.yarn.executor.memoryOverhead=700,\
+--conf,spark.yarn.driver.memoryOverhead=700,\
+${S3_ASSEMBLY},cog-layer-read\
+] | cut -f2 | tee last-step-id.txt
+
+benchmark-reads-13:
+	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \
+--steps Type=CUSTOM_JAR,Name="Benchmark all",Jar=command-runner.jar,Args=[\
+spark-submit,--master,yarn-cluster,\
+--class,com.azavea.Main,\
+--driver-memory,4200M,\
+--driver-cores,2,\
+--executor-memory,4200M,\
+--executor-cores,2,\
+--conf,spark.dynamicAllocation.enabled=false,\
+--conf,spark.executor.instances=20,\
+--conf,spark.yarn.executor.memoryOverhead=700,\
+--conf,spark.yarn.driver.memoryOverhead=700,\
+${S3_ASSEMBLY},reads-13\
+] | cut -f2 | tee last-step-id.txt
+
+benchmark-reads-9:
+	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \
+--steps Type=CUSTOM_JAR,Name="Benchmark all",Jar=command-runner.jar,Args=[\
+spark-submit,--master,yarn-cluster,\
+--class,com.azavea.Main,\
+--driver-memory,4200M,\
+--driver-cores,2,\
+--executor-memory,4200M,\
+--executor-cores,2,\
+--conf,spark.dynamicAllocation.enabled=false,\
+--conf,spark.executor.instances=20,\
+--conf,spark.yarn.executor.memoryOverhead=700,\
+--conf,spark.yarn.driver.memoryOverhead=700,\
+${S3_ASSEMBLY},reads-13\
+] | cut -f2 | tee last-step-id.txt
+
+benchmark-reads-5:
+	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \
+--steps Type=CUSTOM_JAR,Name="Benchmark all",Jar=command-runner.jar,Args=[\
+spark-submit,--master,yarn-cluster,\
+--class,com.azavea.Main,\
+--driver-memory,4200M,\
+--driver-cores,2,\
+--executor-memory,4200M,\
+--executor-cores,2,\
+--conf,spark.dynamicAllocation.enabled=false,\
+--conf,spark.executor.instances=20,\
+--conf,spark.yarn.executor.memoryOverhead=700,\
+--conf,spark.yarn.driver.memoryOverhead=700,\
+${S3_ASSEMBLY},reads-13\
 ] | cut -f2 | tee last-step-id.txt

@@ -35,8 +35,9 @@ _SUCCESS
 .vagrant
 
 .terraform
-scripts/emr/terraform/variables.tf*
-scripts/emr/terraform/terraform.tfstate*
+scripts/terraform/variables.tf*
+scripts/terraform/terraform.tfstate*
+scripts/last-step-id.txt
 
 lib
 index.html

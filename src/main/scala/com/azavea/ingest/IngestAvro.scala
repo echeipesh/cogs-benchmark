@@ -12,17 +12,14 @@ import geotrellis.spark.io.index._
 import geotrellis.spark.pyramid._
 import geotrellis.spark.tiling._
 import geotrellis.vector._
-
-import cats.Id
-import cats.data.WriterT
-import cats.implicits._
 import com.amazonaws.services.s3.AmazonS3URI
+import org.apache.spark.SparkContext
 import org.apache.spark.rdd._
 
 
 object IngestAvro extends Bench {
-  def ingest(inputPath: String, outputPath: String)(name: String): Logged = {
-    val res = timedCreateWriter(name) {
+  def ingest(inputPath: String, outputPath: String)(name: String)(implicit sc: SparkContext): Logged = {
+    val res = timedCreateWriter {
       val s3InputPath = new AmazonS3URI(inputPath)
       val s3OutputPath = new AmazonS3URI(outputPath)
 
@@ -54,6 +51,6 @@ object IngestAvro extends Bench {
       ()
     }
 
-    res.mapWritten(time => Vector(s"IngestAvro.ingest:: ${"%,d".format(time)}"))
+    res.mapWritten(time => Vector(s"IngestAvro.ingest:: ${"%,d".format(time)} ms"))
   }
 }

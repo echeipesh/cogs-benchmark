@@ -1,24 +1,23 @@
 package com.azavea.run
 
 import com.azavea._
+
 import geotrellis.raster._
 import geotrellis.spark._
 import geotrellis.spark.io._
 import geotrellis.spark.io.s3._
-
+import geotrellis.vector.Extent
 import cats.effect.IO
 import cats.implicits._
 import com.amazonaws.services.s3.AmazonS3URI
-
 import spire.syntax.cfor._
+import org.apache.spark.SparkContext
 
 import java.util.concurrent.Executors
-
 import scala.concurrent.ExecutionContext
-import scala.util.Try
 
 object AvroBench extends Bench {
-  def runValueReader(path: String)(name: String, threads: Int = 1, zoom: Option[Int] = None): Logged = {
+  def runValueReader(path: String)(name: String, threads: Int = 16, zoom: Option[Int] = None, extent: Option[Extent] = None)(implicit sc: SparkContext): Logged = {
     val pool = Executors.newFixedThreadPool(threads)
     implicit val ec = ExecutionContext.fromExecutor(pool)
 
@@ -30,29 +29,34 @@ object AvroBench extends Bench {
       case _ => attributeStore.availableZoomLevels(name).toList
     }
 
-    val layersData: List[(LayerId, KeyBounds[SpatialKey])] =
+    val layersData: List[(LayerId, KeyBounds[SpatialKey], TileLayerMetadata[SpatialKey])] =
       zoomLevels
         .map(LayerId(name, _))
         .map { layerId =>
           val LayerAttributes(_, metadata, _, _) = attributeStore.readLayerAttributes[S3LayerHeader, TileLayerMetadata[SpatialKey], SpatialKey](layerId)
-          (layerId, metadata.bounds match { case kb: KeyBounds[SpatialKey] => kb })
+          (layerId, metadata.bounds match { case kb: KeyBounds[SpatialKey] => kb }, metadata)
         }
 
     val valueReader = new S3ValueReader(attributeStore)
 
-    val res: IO[List[(Long, Unit)]] =
+    val res: IO[List[(Long, Long)]] =
       layersData
-        .map { case (layerId, KeyBounds(SpatialKey(minCol, minRow), SpatialKey(maxCol, maxRow))) =>
+        .map { case (layerId, kb, metadata) =>
           IO.shift(ec) *> IO {
+            val gb @ GridBounds(minCol, minRow, maxCol, maxRow) = extent.map(metadata.mapTransform.extentToBounds).getOrElse(kb.toGridBounds)
             val reader = valueReader.reader[SpatialKey, MultibandTile](layerId)
 
-            timedCreateLong("layerId") {
+            val (time, _) = timedCreateLong {
               cfor(minCol)(_ < maxCol, _ + 1) { col =>
                 cfor(minRow)(_ < maxRow, _ + 1) { row =>
-                  Try(reader.read(SpatialKey(col, row))) // skip all errors
+                  try {
+                    reader.read(SpatialKey(col, row)) // skip all errors
+                  } catch { case _ => }
                 }
               }
             }
+
+            (time, gb.size)
           }
         }
         .parSequence
@@ -62,13 +66,21 @@ object AvroBench extends Bench {
         val calculated = res.unsafeRunSync()
         pool.shutdown()
         val averageTime = calculated.map(_._1).sum / calculated.length
-        Vector(s"AvroBench.runValueReader:: ${"%,d".format(averageTime)}").tell
+        val averageCount = calculated.map(_._2).sum / calculated.length
+
+        ((calculated
+          .toVector
+          .map { case (time, size) => s"AvroBench.runValueReader:: ${"%,d".format(time / size)} ms" }
+          :+ s"AvroBench.runValueReader:: total time: ${averageTime} ms"
+          :+ s"AvroBench.runValueReader:: avg number of tiles: ${averageCount}")
+          ++ zoomLevels.toVector.map(zoom => s"AvroBench.runValueReader:: zoom levels: $zoom")
+        ).tell
       }
     } yield ()
   }
 
 
-  def runLayerReader(path: String)(name: String, zoom: Option[Int] = None, iterations: Option[Int] = None): Logged = {
+  def runLayerReader(path: String)(name: String, zoom: Option[Int] = None, extent: Option[Extent] = None, iterations: Option[Int] = None)(implicit sc: SparkContext): Logged = {
     val s3Path = new AmazonS3URI(path)
     val attributeStore = S3AttributeStore(s3Path.getBucket, s3Path.getKey)
 
@@ -82,12 +94,23 @@ object AvroBench extends Bench {
     val layersData: List[LayerId] = zoomLevels.map(LayerId(name, _))
     val layerReader = new S3LayerReader(attributeStore)
 
-    val res: IO[List[(Long, Unit)]] =
+    val res: IO[List[(Long, Long)]] =
       layersData
         .map { layerId =>
           IO {
-            timedCreateLong(layerId.toString) {
-              layerReader.read[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](layerId).count(): Unit
+            timedCreateLong {
+              extent match {
+                case Some(ext) =>
+                  layerReader
+                    .query[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](layerId)
+                    .where(Intersects(ext))
+                    .result
+                    .count()
+                case _ =>
+                  layerReader
+                    .read[SpatialKey, MultibandTile, TileLayerMetadata[SpatialKey]](layerId)
+                    .count()
+              }
             }
           }
         }
@@ -97,7 +120,11 @@ object AvroBench extends Bench {
       _ <- {
         val calculated = res.unsafeRunSync()
         val averageTime = calculated.map(_._1).sum / calculated.length
-        Vector(s"AvroBench.runLayerReader:: ${"%,d".format(averageTime)}").tell
+        val averageCount = calculated.map(_._2).sum / calculated.length
+        (Vector(
+          s"AvroBench.runLayerReader:: avg number of tiles: ${averageCount}",
+          s"AvroBench.runLayerReader:: ${"%,d".format(averageTime)} ms"
+        ) ++ zoom.toVector.map(zoom => s"AvroBench.runLayerReader:: zoom levels: $zoom")).tell
       }
     } yield ()
   }

@@ -8,7 +8,7 @@ trait Bench {
   lazy val valueReaderName = s"${name}-runValueReader"
   lazy val layerReaderName = s"${name}-runLayerReader"
 
-  def timedCreateLong[T](id: String)(f: => T): (Long, T) = {
+  def timedCreateLong[T](f: => T): (Long, T) = {
     val s = System.currentTimeMillis
     val result = f
     val e = System.currentTimeMillis
@@ -17,17 +17,8 @@ trait Bench {
     (rt, result)
   }
 
-  def timedCreateWriter[T](id: String)(f: => T): Writer[Long, T] = {
-    val (rt, result) = timedCreateLong[T](id)(f)
+  def timedCreateWriter[T](f: => T): Writer[Long, T] = {
+    val (rt, result) = timedCreateLong[T](f)
     Writer(rt, result)
   }
-
-  @transient lazy val conf: SparkConf =
-    new SparkConf()
-      .setIfMissing("spark.master", "local[*]")
-      .setAppName("CogBenchmark")
-      .set("spark.serializer", classOf[org.apache.spark.serializer.KryoSerializer].getName)
-      .set("spark.kryo.registrator", classOf[geotrellis.spark.io.kryo.KryoRegistrator].getName)
-
-  @transient implicit lazy val sc: SparkContext = new SparkContext(conf)
 }
