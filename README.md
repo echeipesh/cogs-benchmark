@@ -47,9 +47,18 @@ Was performed a `SpatialIngest`
   - Ingest time (~): `2,664,556 ms`
   - CMD: `cd scripts; make make benchmark-cog-ingest`
 - COG Layer (deflate compression):
-  - In Progress
+  - URI: `s3://geotrellis-test/daunnc/cog-benchmark/cogc-3`
+  - Max zoom level: `13`
+  - KeyBounds: `KeyBounds(SpatialKey(1132,2673),SpatialKey(2647,3584))`
+  - Size (all zoom levels): `5522 Objects - 9.7 GB`
+  - Ingest time (~): `2,775,428 ms`
+  - CMD: `cd scripts; make make benchmark-cog-ingest-compression`
+
+
+## Avro vs COGs
   
 ```text
+
 ==============================================
 InputPath: s3://gt-rasters/nlcd/2011/tiles
 AvroPath: s3://geotrellis-test/daunnc/cog-benchmark/avro-3
@@ -60,47 +69,84 @@ ValueReadersExt: Some(Extent(-1.4499798517584793E7, 6413372.421239428, -1.442152
 LayerReadersExt: Some(Extent(-1.5499798517584793E7, 3945781.478164045, -1.0975542095495135E7, 7961273.039987572))
 ==========READS BENCHMARK, zoom lvl 13 (bounded by extent)========
 AvroBench.runLayerReader:: avg number of tiles: 444857
-AvroBench.runLayerReader:: 155,467 ms
+AvroBench.runLayerReader:: 160,327 ms
 AvroBench.runLayerReader:: zoom levels: 13
 COGBench.runLayerReader:: avg number of tiles: 444857
-COGBench.runLayerReader:: 106,140 ms
+COGBench.runLayerReader:: 97,879 ms
 COGBench.runLayerReader:: zoom levels: 13
-AvroBench.runValueReader:: 56 ms
-AvroBench.runValueReader:: total time: 100415 ms
+AvroBench.runValueReader:: 61 ms
+AvroBench.runValueReader:: total time: 109873 ms
 AvroBench.runValueReader:: avg number of tiles: 1792
 AvroBench.runValueReader:: zoom levels: 13
-COGBench.runValueReader:: 118 ms
-COGBench.runValueReader:: total time: 212059 ms
+COGBench.runValueReader:: 117 ms
+COGBench.runValueReader:: total time: 211029 ms
 COGBench.runValueReader:: avg number of tiles: 1792
 COGBench.runValueReader:: zoom levels: 13
+==========READS BENCHMARK, zoom lvl 10 (bounded by extent)========
+AvroBench.runLayerReader:: avg number of tiles: 7098
+AvroBench.runLayerReader:: 4,469 ms
+AvroBench.runLayerReader:: zoom levels: 10
+COGBench.runLayerReader:: avg number of tiles: 7098
+COGBench.runLayerReader:: 12,921 ms
+COGBench.runLayerReader:: zoom levels: 10
+AvroBench.runValueReader:: 30 ms
+AvroBench.runValueReader:: total time: 1387 ms
+AvroBench.runValueReader:: avg number of tiles: 45
+AvroBench.runValueReader:: zoom levels: 10
+COGBench.runValueReader:: 81 ms
+COGBench.runValueReader:: total time: 3649 ms
+COGBench.runValueReader:: avg number of tiles: 45
+COGBench.runValueReader:: zoom levels: 10
 ==========READS BENCHMARK, zoom lvl 9 (bounded by extent)========
 AvroBench.runLayerReader:: avg number of tiles: 1794
-AvroBench.runLayerReader:: 2,725 ms
+AvroBench.runLayerReader:: 2,101 ms
 AvroBench.runLayerReader:: zoom levels: 9
 COGBench.runLayerReader:: avg number of tiles: 1794
-COGBench.runLayerReader:: 11,824 ms
+COGBench.runLayerReader:: 8,946 ms
 COGBench.runLayerReader:: zoom levels: 9
-AvroBench.runValueReader:: 23 ms
-AvroBench.runValueReader:: total time: 372 ms
+AvroBench.runValueReader:: 16 ms
+AvroBench.runValueReader:: total time: 268 ms
 AvroBench.runValueReader:: avg number of tiles: 16
 AvroBench.runValueReader:: zoom levels: 9
-COGBench.runValueReader:: 47 ms
-COGBench.runValueReader:: total time: 764 ms
+COGBench.runValueReader:: 46 ms
+COGBench.runValueReader:: total time: 746 ms
 COGBench.runValueReader:: avg number of tiles: 16
 COGBench.runValueReader:: zoom levels: 9
 ==========READS BENCHMARK, zoom lvl 9========
 AvroBench.runLayerReader:: avg number of tiles: 5495
-AvroBench.runLayerReader:: 2,612 ms
+AvroBench.runLayerReader:: 3,474 ms
 AvroBench.runLayerReader:: zoom levels: 9
-COGBench.runLayerReader:: avg number of tiles: 1794
-COGBench.runLayerReader:: 10,207 ms
+COGBench.runLayerReader:: avg number of tiles: 5495
+COGBench.runLayerReader:: 24,452 ms
 COGBench.runLayerReader:: zoom levels: 9
+==========READS BENCHMARK, zoom lvl 8 (bounded by extent)========
+AvroBench.runLayerReader:: avg number of tiles: 460
+AvroBench.runLayerReader:: 1,557 ms
+AvroBench.runLayerReader:: zoom levels: 8
+COGBench.runLayerReader:: avg number of tiles: 460
+COGBench.runLayerReader:: 3,827 ms
+COGBench.runLayerReader:: zoom levels: 8
+AvroBench.runValueReader:: 0 ms
+AvroBench.runValueReader:: total time: 0 ms
+AvroBench.runValueReader:: avg number of tiles: 5
+AvroBench.runValueReader:: zoom levels: 8
+COGBench.runValueReader:: 0 ms
+COGBench.runValueReader:: total time: 0 ms
+COGBench.runValueReader:: avg number of tiles: 5
+COGBench.runValueReader:: zoom levels: 8
+==========READS BENCHMARK, zoom lvl 8========
+AvroBench.runLayerReader:: avg number of tiles: 1418
+AvroBench.runLayerReader:: 1,177 ms
+AvroBench.runLayerReader:: zoom levels: 8
+COGBench.runLayerReader:: avg number of tiles: 1437
+COGBench.runLayerReader:: 11,274 ms
+COGBench.runLayerReader:: zoom levels: 8
 ==========READS BENCHMARK, zoom lvl 5 (bounded by extent)========
 AvroBench.runLayerReader:: avg number of tiles: 12
-AvroBench.runLayerReader:: 583 ms
+AvroBench.runLayerReader:: 527 ms
 AvroBench.runLayerReader:: zoom levels: 5
 COGBench.runLayerReader:: avg number of tiles: 12
-COGBench.runLayerReader:: 1,815 ms
+COGBench.runLayerReader:: 2,066 ms
 COGBench.runLayerReader:: zoom levels: 5
 AvroBench.runValueReader:: 0 ms
 AvroBench.runValueReader:: total time: 0 ms
@@ -112,18 +158,144 @@ COGBench.runValueReader:: avg number of tiles: 1
 COGBench.runValueReader:: zoom levels: 5
 ==========READS BENCHMARK, zoom lvl 5========
 AvroBench.runLayerReader:: avg number of tiles: 34
-AvroBench.runLayerReader:: 644 ms
+AvroBench.runLayerReader:: 984 ms
 AvroBench.runLayerReader:: zoom levels: 5
 COGBench.runLayerReader:: avg number of tiles: 34
-COGBench.runLayerReader:: 870 ms
+COGBench.runLayerReader:: 1,502 ms
 COGBench.runLayerReader:: zoom levels: 5
-AvroBench.runValueReader:: 28 ms
-AvroBench.runValueReader:: total time: 1009 ms
+AvroBench.runValueReader:: 50 ms
+AvroBench.runValueReader:: total time: 1764 ms
 AvroBench.runValueReader:: avg number of tiles: 35
 AvroBench.runValueReader:: zoom levels: 5
-COGBench.runValueReader:: 77 ms
-COGBench.runValueReader:: total time: 2698 ms
+COGBench.runValueReader:: 76 ms
+COGBench.runValueReader:: total time: 2664 ms
 COGBench.runValueReader:: avg number of tiles: 35
 COGBench.runValueReader:: zoom levels: 5
+
 ```  
 
+## Avro vs Compressed COGs
+
+```text
+
+==============================================
+InputPath: s3://gt-rasters/nlcd/2011/tiles
+AvroPath: s3://geotrellis-test/daunnc/cog-benchmark/avro-3
+COGCompressedPath: s3://geotrellis-test/daunnc/cog-benchmark/cogc-3
+AvroLayer: avroLayer
+COGLayer: cogLayer
+ValueReadersExt: Some(Extent(-1.4499798517584793E7, 6413372.421239428, -1.4421527000620775E7, 6961273.039987572))
+LayerReadersExt: Some(Extent(-1.5499798517584793E7, 3945781.478164045, -1.0975542095495135E7, 7961273.039987572))
+==========READSC BENCHMARK, zoom lvl 13 (bounded by extent)========
+AvroBench.runLayerReader:: avg number of tiles: 444857
+AvroBench.runLayerReader:: 172,229 ms
+AvroBench.runLayerReader:: zoom levels: 13
+COGBench.runLayerReader:: avg number of tiles: 444857
+COGBench.runLayerReader:: 59,319 ms
+COGBench.runLayerReader:: zoom levels: 13
+AvroBench.runValueReader:: 63 ms
+AvroBench.runValueReader:: total time: 114060 ms
+AvroBench.runValueReader:: avg number of tiles: 1792
+AvroBench.runValueReader:: zoom levels: 13
+COGBench.runValueReader:: 88 ms
+COGBench.runValueReader:: total time: 158582 ms
+COGBench.runValueReader:: avg number of tiles: 1792
+COGBench.runValueReader:: zoom levels: 13
+==========READSC BENCHMARK, zoom lvl 10 (bounded by extent)========
+AvroBench.runLayerReader:: avg number of tiles: 7098
+AvroBench.runLayerReader:: 3,631 ms
+AvroBench.runLayerReader:: zoom levels: 10
+COGBench.runLayerReader:: avg number of tiles: 7098
+COGBench.runLayerReader:: 9,502 ms
+COGBench.runLayerReader:: zoom levels: 10
+AvroBench.runValueReader:: 62 ms
+AvroBench.runValueReader:: total time: 2802 ms
+AvroBench.runValueReader:: avg number of tiles: 45
+AvroBench.runValueReader:: zoom levels: 10
+COGBench.runValueReader:: 60 ms
+COGBench.runValueReader:: total time: 2741 ms
+COGBench.runValueReader:: avg number of tiles: 45
+COGBench.runValueReader:: zoom levels: 10
+==========READSC BENCHMARK, zoom lvl 10========
+AvroBench.runLayerReader:: avg number of tiles: 21583
+AvroBench.runLayerReader:: 7,701 ms
+AvroBench.runLayerReader:: zoom levels: 10
+COGBench.runLayerReader:: avg number of tiles: 21611
+COGBench.runLayerReader:: 27,782 ms
+COGBench.runLayerReader:: zoom levels: 10
+==========READSC BENCHMARK, zoom lvl 9 (bounded by extent)========
+AvroBench.runLayerReader:: avg number of tiles: 1794
+AvroBench.runLayerReader:: 1,611 ms
+AvroBench.runLayerReader:: zoom levels: 9
+COGBench.runLayerReader:: avg number of tiles: 1794
+COGBench.runLayerReader:: 9,634 ms
+COGBench.runLayerReader:: zoom levels: 9
+AvroBench.runValueReader:: 48 ms
+AvroBench.runValueReader:: total time: 776 ms
+AvroBench.runValueReader:: avg number of tiles: 16
+AvroBench.runValueReader:: zoom levels: 9
+COGBench.runValueReader:: 42 ms
+COGBench.runValueReader:: total time: 672 ms
+COGBench.runValueReader:: avg number of tiles: 16
+COGBench.runValueReader:: zoom levels: 9
+==========READSC BENCHMARK, zoom lvl 9========
+AvroBench.runLayerReader:: avg number of tiles: 5495
+AvroBench.runLayerReader:: 2,973 ms
+AvroBench.runLayerReader:: zoom levels: 9
+COGBench.runLayerReader:: avg number of tiles: 5495
+COGBench.runLayerReader:: 21,951 ms
+COGBench.runLayerReader:: zoom levels: 9
+==========READSC BENCHMARK, zoom lvl 8 (bounded by extent)========
+AvroBench.runLayerReader:: avg number of tiles: 460
+AvroBench.runLayerReader:: 1,077 ms
+AvroBench.runLayerReader:: zoom levels: 8
+COGBench.runLayerReader:: avg number of tiles: 460
+COGBench.runLayerReader:: 2,278 ms
+COGBench.runLayerReader:: zoom levels: 8
+AvroBench.runValueReader:: 0 ms
+AvroBench.runValueReader:: total time: 0 ms
+AvroBench.runValueReader:: avg number of tiles: 5
+AvroBench.runValueReader:: zoom levels: 8
+COGBench.runValueReader:: 0 ms
+COGBench.runValueReader:: total time: 0 ms
+COGBench.runValueReader:: avg number of tiles: 5
+COGBench.runValueReader:: zoom levels: 8
+==========READSC BENCHMARK, zoom lvl 8========
+AvroBench.runLayerReader:: avg number of tiles: 1418
+AvroBench.runLayerReader:: 1,665 ms
+AvroBench.runLayerReader:: zoom levels: 8
+COGBench.runLayerReader:: avg number of tiles: 1437
+COGBench.runLayerReader:: 3,062 ms
+COGBench.runLayerReader:: zoom levels: 8
+==========READSC BENCHMARK, zoom lvl 5 (bounded by extent)========
+AvroBench.runLayerReader:: avg number of tiles: 12
+AvroBench.runLayerReader:: 454 ms
+AvroBench.runLayerReader:: zoom levels: 5
+COGBench.runLayerReader:: avg number of tiles: 12
+COGBench.runLayerReader:: 2,207 ms
+COGBench.runLayerReader:: zoom levels: 5
+AvroBench.runValueReader:: 0 ms
+AvroBench.runValueReader:: total time: 0 ms
+AvroBench.runValueReader:: avg number of tiles: 1
+AvroBench.runValueReader:: zoom levels: 5
+COGBench.runValueReader:: 0 ms
+COGBench.runValueReader:: total time: 0 ms
+COGBench.runValueReader:: avg number of tiles: 1
+COGBench.runValueReader:: zoom levels: 5
+==========READSC BENCHMARK, zoom lvl 5========
+AvroBench.runLayerReader:: avg number of tiles: 34
+AvroBench.runLayerReader:: 1,422 ms
+AvroBench.runLayerReader:: zoom levels: 5
+COGBench.runLayerReader:: avg number of tiles: 34
+COGBench.runLayerReader:: 676 ms
+COGBench.runLayerReader:: zoom levels: 5
+AvroBench.runValueReader:: 40 ms
+AvroBench.runValueReader:: total time: 1403 ms
+AvroBench.runValueReader:: avg number of tiles: 35
+AvroBench.runValueReader:: zoom levels: 5
+COGBench.runValueReader:: 60 ms
+COGBench.runValueReader:: total time: 2114 ms
+COGBench.runValueReader:: avg number of tiles: 35
+COGBench.runValueReader:: zoom levels: 5
+
+```
