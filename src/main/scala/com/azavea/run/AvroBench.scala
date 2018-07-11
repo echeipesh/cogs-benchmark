@@ -17,7 +17,7 @@ import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 
 object AvroBench extends Bench {
-  def runValueReader(path: String)(name: String, threads: Int = 16, zoom: Option[Int] = None, extent: Option[Extent] = None)(implicit sc: SparkContext): Logged = {
+  def runValueReader(path: String)(name: String, threads: Int = 16, zoom: Option[Int] = None, extent: Option[Extent] = None, targetBands: Option[Seq[Int]] = None)(implicit sc: SparkContext): Logged = {
     val pool = Executors.newFixedThreadPool(threads)
     implicit val ec = ExecutionContext.fromExecutor(pool)
 
@@ -46,11 +46,17 @@ object AvroBench extends Bench {
             val gb @ GridBounds(minCol, minRow, maxCol, maxRow) = extent.map(metadata.mapTransform.extentToBounds).getOrElse(kb.toGridBounds)
             val reader = valueReader.reader[SpatialKey, MultibandTile](layerId)
 
+            val read =
+              targetBands match {
+                case Some(bands) => (key: SpatialKey) => reader.read(key).subsetBands(bands)
+                case None => (key: SpatialKey) => reader.read(key)
+              }
+
             val (time, _) = timedCreateLong {
               cfor(minCol)(_ < maxCol, _ + 1) { col =>
                 cfor(minRow)(_ < maxRow, _ + 1) { row =>
                   try {
-                    reader.read(SpatialKey(col, row)) // skip all errors
+                    read(SpatialKey(col, row)) // skip all errors
                   } catch { case _ => }
                 }
               }
@@ -61,6 +67,12 @@ object AvroBench extends Bench {
         }
         .parSequence
 
+    val benchmark =
+      targetBands match {
+        case Some(_) => "runValueReaderBandSubset"
+        case None => "runValueReader"
+      }
+
     for {
       _ <- {
         val calculated = res.unsafeRunSync()
@@ -70,15 +82,14 @@ object AvroBench extends Bench {
 
         ((calculated
           .toVector
-          .map { case (time, size) => s"AvroBench.runValueReader:: ${"%,d".format(time / size)} ms" }
-          :+ s"AvroBench.runValueReader:: total time: ${averageTime} ms"
-          :+ s"AvroBench.runValueReader:: avg number of tiles: ${averageCount}")
-          ++ zoomLevels.toVector.map(zoom => s"AvroBench.runValueReader:: zoom levels: $zoom")
+          .map { case (time, size) => s"AvroBench.${benchmark}:: ${"%,d".format(time / size)} ms" }
+          :+ s"AvroBench.${benchmark}:: total time: ${averageTime} ms"
+          :+ s"AvroBench.${benchmark}:: avg number of tiles: ${averageCount}")
+          ++ zoomLevels.toVector.map(zoom => s"AvroBench.${benchmark}:: zoom levels: $zoom")
         ).tell
       }
     } yield ()
   }
-
 
   def runLayerReader(path: String)(name: String, zoom: Option[Int] = None, extent: Option[Extent] = None, iterations: Option[Int] = None)(implicit sc: SparkContext): Logged = {
     val s3Path = new AmazonS3URI(path)

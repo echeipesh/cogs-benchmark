@@ -25,7 +25,7 @@ object COGBench extends Bench {
     attributeStore.availableZoomLevels(name).toList
   }
 
-  def runValueReader(path: String)(name: String, zoomLevels: List[Int], extent: Option[Extent] = None, threads: Int = 16)(implicit sc: SparkContext): Logged = {
+  def runValueReader(path: String)(name: String, zoomLevels: List[Int], extent: Option[Extent] = None, threads: Int = 16, targetBands: Option[Seq[Int]] = None)(implicit sc: SparkContext): Logged = {
     val pool = Executors.newFixedThreadPool(threads)
     implicit val ec = ExecutionContext.fromExecutor(pool)
 
@@ -51,11 +51,17 @@ object COGBench extends Bench {
             val gb @ GridBounds(minCol, minRow, maxCol, maxRow) = extent.map(metadata.mapTransform.extentToBounds).getOrElse(kb.toGridBounds)
             val reader = valueReader.reader[SpatialKey, MultibandTile](layerId)
 
+            val read =
+              targetBands match {
+                case Some(bands) => (key: SpatialKey) => reader.readSubsetBands(key, bands)
+                case None => (key: SpatialKey) => reader.read(key)
+              }
+
             val (time, _) = timedCreateLong {
               cfor(minCol)(_ < maxCol, _ + 1) { col =>
                 cfor(minRow)(_ < maxRow, _ + 1) { row =>
                   try {
-                    reader.read(SpatialKey(col, row)) // skip all errors
+                    read(SpatialKey(col, row)) // skip all errors
                   } catch { case _ => }
                 }
               }
@@ -66,6 +72,12 @@ object COGBench extends Bench {
         }
         .parSequence
 
+    val benchmark =
+      targetBands match {
+        case Some(_) => "runValueReaderBandSubset"
+        case None => "runValueReader"
+      }
+
     for {
       _ <- {
         val calculated = res.unsafeRunSync()
@@ -75,10 +87,10 @@ object COGBench extends Bench {
 
         ((calculated
           .toVector
-          .map { case (time, size) => s"COGBench.runValueReader:: ${"%,d".format(time / size)} ms" }
-          :+ s"COGBench.runValueReader:: total time: ${averageTime} ms"
-          :+ s"COGBench.runValueReader:: avg number of tiles: ${averageCount}")
-          ++ zoomLevels.toVector.map(zoom => s"COGBench.runValueReader:: zoom levels: $zoom")
+          .map { case (time, size) => s"COGBench.${benchmark}:: ${"%,d".format(time / size)} ms" }
+          :+ s"COGBench.${benchmark}:: total time: ${averageTime} ms"
+          :+ s"COGBench.${benchmark}:: avg number of tiles: ${averageCount}")
+          ++ zoomLevels.toVector.map(zoom => s"COGBench.${benchmark}:: zoom levels: $zoom")
         ).tell
       }
     } yield ()
