@@ -26,8 +26,16 @@ object Main extends Spark with LazyLogging {
     val avroLayer = "avroLayer"
     val cogLayer  = "cogLayer"
 
+    val avroBandLayer = "avro-multiband-band-layer"
+    val avroPixelLayer = "avro-multiband-pixel-layer"
+
+    val cogBandLayer = "cog-multiband-band-layer"
+    val cogPixelLayer = "cog-multiband-pixel-layer"
+
     val layerExt = Extent(-1.4499798517584793E7, 4945781.478164045, -1.1975542095495135E7, 6961273.039987572).buffer(1000000).some
     val valueExt = Extent(-1.4499798517584793E7, 6413372.421239428, -1.4421527000620775E7, 6961273.039987572).some
+
+    val multibandValueExt = Extent(-7360000, 2049000, -7350000, 2053000).some
 
     val result = args.headOption match {
       case Some("avro-ingest") =>
@@ -227,6 +235,80 @@ object Main extends Spark with LazyLogging {
           _ <- COGBench.runLayerReader(cogCPath)(cogLayer, List(5))
           _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 5.some)
           _ <- COGBench.runValueReader(cogCPath)(cogLayer, List(5))
+        } yield ()
+      case Some("read-band-interleave") =>
+        for {
+          _ <- Vector("==============================================").tell
+          _ <- Vector(s"AvroPath: $avroPath").tell
+          _ <- Vector(s"AvroBandLayer: $avroBandLayer").tell
+          _ <- Vector(s"COGPath: $cogPath").tell
+          _ <- Vector(s"COGBandLayer: $cogBandLayer").tell
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 13.some, extent = multibandValueExt, targetBands = Seq(0).some)
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(13), extent = multibandValueExt, targetBands = Seq(0).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0, 1, 3)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 13.some, extent = multibandValueExt, targetBands = Seq(0, 1, 3).some)
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(13), extent = multibandValueExt, targetBands = Seq(0, 1, 3).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0, 1, 3, 2, 4, 8, 7, 6, 5)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 13.some, extent = multibandValueExt, targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(13), extent = multibandValueExt, targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 9, Bands Seq(0)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 9.some, targetBands = Seq(0).some)
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(9), targetBands = Seq(0).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 9, Bands Seq(0, 1, 3)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 9.some, targetBands = Seq(0, 1, 3).some)
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(9), targetBands = Seq(0, 1, 3).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 9, Bands Seq(0, 1, 3, 2, 4, 8, 7, 6, 5)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 9.some, targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(9), targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 7, Bands Seq(0)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 7.some, targetBands = Seq(0).some)
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(7), targetBands = Seq(0).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 7, Bands Seq(0, 1, 3)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 7.some, targetBands = Seq(0, 1, 3).some)
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(7), targetBands = Seq(0, 1, 3).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 7, Bands Seq(0, 1, 3, 2, 4, 8, 7, 6, 5)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 7.some, targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(7), targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+        } yield ()
+      case Some("read-pixel-interleave") =>
+        for {
+          _ <- Vector("==============================================").tell
+          _ <- Vector(s"AvroPath: $avroPath").tell
+          _ <- Vector(s"AvroPixelLayer: $avroPixelLayer").tell
+          _ <- Vector(s"COGPath: $cogPath").tell
+          _ <- Vector(s"COGPixelLayer: $cogPixelLayer").tell
+          _ <- Vector("==========READ PIXEL INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroPixelLayer, zoom = 13.some, extent = multibandValueExt, targetBands = Seq(0).some)
+          _ <- COGBench.runValueReader(cogPath)(cogPixelLayer, List(13), extent = multibandValueExt, targetBands = Seq(0).some)
+          _ <- Vector("==========READ PIXEL INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0, 1, 3)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroPixelLayer, zoom = 13.some, extent = multibandValueExt, targetBands = Seq(0, 1, 3).some)
+          _ <- COGBench.runValueReader(cogPath)(cogPixelLayer, List(13), extent = multibandValueExt, targetBands = Seq(0, 1, 3).some)
+          _ <- Vector("==========READ PIXEL INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0, 1, 3, 2, 4, 8, 7, 6, 5)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroPixelLayer, zoom = 13.some, extent = multibandValueExt, targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+          _ <- COGBench.runValueReader(cogPath)(cogPixelLayer, List(13), extent = multibandValueExt, targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+
+          _ <- Vector("==========READ PIXEL INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 9, Bands Seq(0)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroPixelLayer, zoom = 9.some, targetBands = Seq(0).some)
+          _ <- COGBench.runValueReader(cogPath)(cogPixelLayer, List(9), targetBands = Seq(0).some)
+          _ <- Vector("==========READ PIXEL INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 9, Bands Seq(0, 1, 3)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroPixelLayer, zoom = 9.some, targetBands = Seq(0, 1, 3).some)
+          _ <- COGBench.runValueReader(cogPath)(cogPixelLayer, List(9), targetBands = Seq(0, 1, 3).some)
+          _ <- Vector("==========READ PIXEL INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 9, Bands Seq(0, 1, 3, 2, 4, 8, 7, 6, 5)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroPixelLayer, zoom = 9.some, targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+          _ <- COGBench.runValueReader(cogPath)(cogPixelLayer, List(9), targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+
+          _ <- Vector("==========READ PIXEL INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 7, Bands Seq(0)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroPixelLayer, zoom = 7.some, targetBands = Seq(0).some)
+          _ <- COGBench.runValueReader(cogPath)(cogPixelLayer, List(7), targetBands = Seq(0).some)
+          _ <- Vector("==========READ PIXEL INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 7, Bands Seq(0, 1, 3)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroPixelLayer, zoom = 7.some, targetBands = Seq(0, 1, 3).some)
+          _ <- COGBench.runValueReader(cogPath)(cogPixelLayer, List(7), targetBands = Seq(0, 1, 3).some)
+          _ <- Vector("==========READ PIXEL INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 7, Bands Seq(0, 1, 3, 2, 4, 8, 7, 6, 5)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroPixelLayer, zoom = 7.some, targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+          _ <- COGBench.runValueReader(cogPath)(cogPixelLayer, List(7), targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
         } yield ()
       case _ =>
         for {
