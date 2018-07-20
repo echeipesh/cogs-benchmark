@@ -61,7 +61,7 @@ object COGBench extends Bench {
               cfor(minCol)(_ < maxCol, _ + 1) { col =>
                 cfor(minRow)(_ < maxRow, _ + 1) { row =>
                   try {
-                    read(SpatialKey(col, row)) // skip all errors
+                    read(SpatialKey(col, row))
                   } catch { case _ => }
                 }
               }

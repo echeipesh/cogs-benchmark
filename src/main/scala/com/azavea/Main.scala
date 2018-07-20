@@ -35,7 +35,7 @@ object Main extends Spark with LazyLogging {
     val layerExt = Extent(-1.4499798517584793E7, 4945781.478164045, -1.1975542095495135E7, 6961273.039987572).buffer(1000000).some
     val valueExt = Extent(-1.4499798517584793E7, 6413372.421239428, -1.4421527000620775E7, 6961273.039987572).some
 
-    val multibandValueExt = Extent(-7360000, 2049000, -7350000, 2053000).some
+    val multibandValueExt = Extent(-7386874.413479432, 2015491.5618235283, -7308602.896515412, 2093763.0787875466).some
 
     val result = args.headOption match {
       case Some("avro-ingest") =>
@@ -271,6 +271,58 @@ object Main extends Spark with LazyLogging {
           _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(7), targetBands = Seq(0, 1, 3).some)
           _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 7, Bands Seq(0, 1, 3, 2, 4, 8, 7, 6, 5)========").tell
           _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 7.some, targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(7), targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+        } yield ()
+      case Some("read-band-interleave-avro") =>
+        for {
+          _ <- Vector("==============================================").tell
+          _ <- Vector(s"AvroPath: $avroPath").tell
+          _ <- Vector(s"AvroBandLayer: $avroBandLayer").tell
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 13.some, extent = multibandValueExt, targetBands = Seq(0).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0, 1, 3)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 13.some, extent = multibandValueExt, targetBands = Seq(0, 1, 3).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0, 1, 3, 2, 4, 8, 7, 6, 5)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 13.some, extent = multibandValueExt, targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 9, Bands Seq(0)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 9.some, targetBands = Seq(0).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 9, Bands Seq(0, 1, 3)========").tell
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(9), targetBands = Seq(0, 1, 3).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 9, Bands Seq(0, 1, 3, 2, 4, 8, 7, 6, 5)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 9.some, targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 7, Bands Seq(0)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 7.some, targetBands = Seq(0).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 7, Bands Seq(0, 1, 3)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 7.some, targetBands = Seq(0, 1, 3).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 7, Bands Seq(0, 1, 3, 2, 4, 8, 7, 6, 5)========").tell
+          _ <- AvroBench.runValueReader(avroPath)(avroBandLayer, zoom = 7.some, targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+        } yield ()
+      case Some("read-band-interleave-cogs") =>
+        for {
+          _ <- Vector("==============================================").tell
+          _ <- Vector(s"COGPath: $cogPath").tell
+          _ <- Vector(s"COGBandLayer: $cogBandLayer").tell
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0)========").tell
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(13), extent = multibandValueExt, targetBands = Seq(0).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0, 1, 3)========").tell
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(13), extent = multibandValueExt, targetBands = Seq(0, 1, 3).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0, 1, 3, 2, 4, 8, 7, 6, 5)========").tell
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(13), extent = multibandValueExt, targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 9, Bands Seq(0)========").tell
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(9), targetBands = Seq(0).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 9, Bands Seq(0, 1, 3)========").tell
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(9), targetBands = Seq(0, 1, 3).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 9, Bands Seq(0, 1, 3, 2, 4, 8, 7, 6, 5)========").tell
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(9), targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 7, Bands Seq(0)========").tell
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(7), targetBands = Seq(0).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 7, Bands Seq(0, 1, 3)========").tell
+          _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(7), targetBands = Seq(0, 1, 3).some)
+          _ <- Vector("==========READ BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 7, Bands Seq(0, 1, 3, 2, 4, 8, 7, 6, 5)========").tell
           _ <- COGBench.runValueReader(cogPath)(cogBandLayer, List(7), targetBands = Seq(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
         } yield ()
       case Some("read-pixel-interleave") =>
