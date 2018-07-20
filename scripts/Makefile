@@ -1,4 +1,4 @@
-VERSION ?= 0.1.0
+VERSION ?= 0.2.0
 VERSION_SUFFIX ?= -SNAPSHOT
 ASSEMBLY := ../target/scala-2.11/cogs-benchmark-assembly-${VERSION}${VERSION_SUFFIX}.jar
 S3_ASSEMBLY := s3://geotrellis-test/daunnc/cogs-benchmark-assembly-${VERSION}${VERSION_SUFFIX}.jar
@@ -347,4 +347,36 @@ spark-submit,--master,yarn-cluster,\
 --conf,spark.yarn.executor.memoryOverhead=700,\
 --conf,spark.yarn.driver.memoryOverhead=700,\
 ${S3_ASSEMBLY},read-band-interleave\
+] | cut -f2 | tee last-step-id.txt
+
+benchmark-read-band-interleave-avro:
+	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \
+--steps Type=CUSTOM_JAR,Name="Read Band Interleave Avro",Jar=command-runner.jar,Args=[\
+spark-submit,--master,yarn-cluster,\
+--class,com.azavea.Main,\
+--driver-memory,4200M,\
+--driver-cores,2,\
+--executor-memory,4200M,\
+--executor-cores,2,\
+--conf,spark.dynamicAllocation.enabled=false,\
+--conf,spark.executor.instances=20,\
+--conf,spark.yarn.executor.memoryOverhead=700,\
+--conf,spark.yarn.driver.memoryOverhead=700,\
+${S3_ASSEMBLY},read-band-interleave-avro\
+] | cut -f2 | tee last-step-id.txt
+
+benchmark-read-band-interleave-cogs:
+	aws emr add-steps --output text --cluster-id ${CLUSTER_ID} \
+--steps Type=CUSTOM_JAR,Name="Read Band Interleave COGS",Jar=command-runner.jar,Args=[\
+spark-submit,--master,yarn-cluster,\
+--class,com.azavea.Main,\
+--driver-memory,4200M,\
+--driver-cores,2,\
+--executor-memory,4200M,\
+--executor-cores,2,\
+--conf,spark.dynamicAllocation.enabled=false,\
+--conf,spark.executor.instances=20,\
+--conf,spark.yarn.executor.memoryOverhead=700,\
+--conf,spark.yarn.driver.memoryOverhead=700,\
+${S3_ASSEMBLY},read-band-interleave-cogs\
 ] | cut -f2 | tee last-step-id.txt
