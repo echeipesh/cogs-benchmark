@@ -194,6 +194,21 @@ object Main extends Spark with LazyLogging {
           _ <- AvroBench.runValueReader(avroPath)(avroLayer, zoom = 5.some)
           _ <- COGBench.runValueReader(cogCPath)(cogLayer, List(5))
         } yield ()
+      case Some("layer-band-interleave-cogs") =>
+        for {
+          _ <- Vector("==============================================").tell
+          _ <- Vector(s"InputPath: $inputPath").tell
+          _ <- Vector(s"COGCompressedPath: $cogCPath").tell
+          _ <- Vector(s"COGLayer: $cogLayer").tell
+          _ <- Vector(s"ValueReadersExt: $valueExt").tell
+          _ <- Vector(s"LayerReadersExt: $layerExt").tell
+          _ <- Vector("==========QUERY BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0), zoom lvl 13 (bounded by extent)========").tell
+          _ <- COGBench.runLayerReader(cogCPath)(cogBandLayer, List(13), extent = layerExt, targetBands = List(0).some)
+          _ <- Vector("==========QUERY BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0, 1, 3), zoom lvl 13 (bounded by extent)========").tell
+          _ <- COGBench.runLayerReader(cogCPath)(cogBandLayer, List(13), extent = layerExt, targetBands = List(0, 1, 3).some)
+          _ <- Vector("==========QUERY BAND INTERLEAVE TILE BANDS BENCHMARK, zoom lvl 13, Bands Seq(0, 1, 3, 2, 4, 8, 7, 6, 5), zoom lvl 13 (bounded by extent)========").tell
+          _ <- COGBench.runLayerReader(cogCPath)(cogBandLayer, List(13), extent = layerExt, targetBands = List(0, 1, 3, 2, 4, 8, 7, 6, 5).some)
+        } yield ()
       case Some("compressed") =>
         for {
           _ <- Vector("==============================================").tell

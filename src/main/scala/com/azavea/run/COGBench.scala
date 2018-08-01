@@ -97,7 +97,7 @@ object COGBench extends Bench {
   }
 
 
-  def runLayerReader(path: String)(name: String, zoomLevels: List[Int], extent: Option[Extent] = None)(implicit sc: SparkContext): Logged = {
+  def runLayerReader(path: String)(name: String, zoomLevels: List[Int], extent: Option[Extent] = None, targetBands: Option[Seq[Int]] = None)(implicit sc: SparkContext): Logged = {
     val s3Path = new AmazonS3URI(path)
     val attributeStore = S3AttributeStore(s3Path.getBucket, s3Path.getKey)
 
@@ -109,16 +109,29 @@ object COGBench extends Bench {
         .map { layerId =>
           IO {
             timedCreateLong {
-              extent match {
-                case Some(ext) =>
+              (extent, targetBands) match {
+                case (Some(ext), _) =>
                   layerReader
                     .query[SpatialKey, MultibandTile](layerId)
                     .where(Intersects(ext))
                     .result
                     .count()
-                case _ =>
+
+                case (Some(ext), Some(bands)) =>
+                  layerReader
+                    .querySubsetBands[SpatialKey](layerId, bands)
+                    .where(Intersects(ext))
+                    .result
+                    .count()
+
+                case (None, _) =>
                   layerReader
                     .read[SpatialKey, MultibandTile](layerId)
+                    .count()
+
+                case (None, Some(bands)) =>
+                  layerReader
+                    .readSubsetBands[SpatialKey](layerId, bands)
                     .count()
               }
             }
